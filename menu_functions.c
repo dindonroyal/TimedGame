@@ -139,26 +139,30 @@ void reprise_partie_sauvegarde(sGame *g) {
     printf("Entrez le nom de la partie que vous voulez rejoindre :\n");
     readStdin(tmp, sizeof(tmp));
 
-    if(!game_histo_load(g,tmp)){
+    if(game_histo_load(g,tmp)!=0){
 	exitOnErrSyst("game_histo_load", NULL);
     }
     //FIXME empecher les autres de pouvoir ouvrir la meme sauvegarde
     //Celui qui charge la partie choisit entre J1 et J2
-    while(comp1!=0 || comp2!=0){
+    while((comp1*comp2)!=0 ){//
         printf("Entrez le nom du joueur que vous étiez : %s (J1) ou %s (J2) \n",g->conf.playername[0],g->conf.playername[1]);
+	int comp1lenght=strlen(g->conf.playername[0]);
+	int comp2lenght=strlen(g->conf.playername[1]);	
         readStdin(tmp, sizeof(tmp));
-        comp1=strncmp(tmp,g->conf.playername[0],8);
-        comp2=strncmp(tmp,g->conf.playername[1],8);
+        comp1=strncmp(tmp,g->conf.playername[0],comp1lenght);
+        comp2=strncmp(tmp,g->conf.playername[1],comp2lenght);
     }
     //TODO
-    /* ouverture mem partagée et canal de communication */
 
+    /* ouverture de communication */
+    if(msg_init(game_get_filepath(g), 0600|IPC_CREAT, (void *)g)==-1)
+        exitOnErrSyst("msg_init", NULL);
     
 }
 
 void sauvegarder(sGame *g) {
 
-	if(!game_histo_save(g)){
+	if(game_histo_save(g)!=0){
 		exitOnErrSyst("game_histo_save", NULL);
 	}
 }
@@ -240,9 +244,7 @@ void afficher_historique(sGame *g) {
     
     /*fermeture du descripteur en ecriture sur le tube (on ne l'utilise pas ici)*/
     close(tube[0]);
-
     wait(&status);
-     
 }
 
 
